@@ -1,0 +1,13 @@
+# Video worker image — same Node base as the API, plus FFmpeg/ffprobe for
+# metadata extraction and thumbnail generation (TD-04/TD-05).
+FROM node:25.6.0-slim
+
+RUN apt update && apt install -y ffmpeg procps curl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /home/node/app
+
+USER node
+
+# Real command is set in SI-03.6 (runs the standalone worker: src/videos/worker/main.ts).
+# Idle until then so the container builds and stays up without crash-looping.
+CMD [ "tail", "-f", "/dev/null" ]

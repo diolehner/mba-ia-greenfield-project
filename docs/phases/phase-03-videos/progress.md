@@ -7,7 +7,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluído (testes verdes)
 
 | SI | Descrição | Status | Testes |
 |----|-----------|--------|--------|
-| SI-03.0 | Infra & deps (MinIO, Redis, config, install) | ⬜ | — |
+| SI-03.0 | Infra & deps (MinIO, Redis, config, install) | ✅ | infra up verificada (redis/minio healthy, worker up, bucket `videos` criado); tsc 0 |
 | SI-03.1 | Entidade `Video` + migration `CreateVideos` | ⬜ | — |
 | SI-03.2 | Storage service (S3/MinIO) | ⬜ | — |
 | SI-03.3 | Fila BullMQ + producer | ⬜ | — |
