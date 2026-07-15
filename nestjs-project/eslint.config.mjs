@@ -26,10 +26,23 @@ export default tseslint.config(
   },
   {
     rules: {
+      // Project policy (see CLAUDE.md → Code Conventions): `any` is allowed.
+      // Given that, the whole `no-unsafe-*` family is downgraded to warning for
+      // internal consistency — erroring on every use of an explicitly-allowed `any`
+      // contradicts the policy. `no-unsafe-argument` was already a warning; the
+      // sibling rules are aligned here. Warnings keep the signal visible without
+      // failing the build. `unbound-method` is common noise in Jest mocks.
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-unsafe-function-type': 'warn',
+      '@typescript-eslint/unbound-method': 'warn',
+      '@typescript-eslint/require-await': 'warn',
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
 );

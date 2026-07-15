@@ -31,12 +31,19 @@ describe('Database migrations (integration)', () => {
 
     await dataSource.initialize();
 
-    await Promise.all([
-      ...MANAGED_TABLES.map((table) =>
-        dataSource.query(`DROP TABLE IF EXISTS "${table}" CASCADE`),
-      ),
-      dataSource.query(`DROP TABLE IF EXISTS "migrations" CASCADE`),
-    ]);
+    // Clean slate before re-running migrations. Run sequentially (concurrent DDL on
+    // the same connection can deadlock) and drop the managed tables, the migrations
+    // bookkeeping table AND the enum types the migrations create. A prior suite that
+    // synchronizes entities (or an earlier migration run) leaves the enum type behind;
+    // without dropping it, `CREATE TYPE ... AS ENUM` fails with "type already exists"
+    // and the undestroyed connection turns the failure into a hang.
+    for (const table of MANAGED_TABLES) {
+      await dataSource.query(`DROP TABLE IF EXISTS "${table}" CASCADE`);
+    }
+    await dataSource.query(`DROP TABLE IF EXISTS "migrations" CASCADE`);
+    await dataSource.query(
+      `DROP TYPE IF EXISTS "verification_tokens_type_enum" CASCADE`,
+    );
   });
 
   afterAll(async () => {
