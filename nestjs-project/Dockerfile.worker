@@ -1,0 +1,12 @@
+# Video worker image — same Node base as the API, plus FFmpeg/ffprobe for
+# metadata extraction and thumbnail generation (TD-04/TD-05).
+FROM node:25.6.0-slim
+
+RUN apt update && apt install -y ffmpeg procps curl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /home/node/app
+
+USER node
+
+# Runs the standalone BullMQ worker (no HTTP server) in dev via ts-node.
+CMD [ "npx", "ts-node", "-r", "tsconfig-paths/register", "src/videos/worker/main.ts" ]

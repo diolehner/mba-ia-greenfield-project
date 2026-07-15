@@ -23,8 +23,40 @@ See `docs/diagrams/software-arch.mermaid` for the full diagram. Key containers:
 - **Video Worker** (FFmpeg) → consumes jobs from queue, processes videos, updates DB and storage
 - **Database** (PostgreSQL) → users, channels, videos, comments, likes
 - **Object Storage** (S3/MinIO) → video files and thumbnails
-- **Message Queue** (TBD) → video processing job queue
+- **Message Queue** (BullMQ over Redis) → video processing job queue
 - **Email Service** (SMTP) → account confirmation and password recovery
+
+## Videos Module (Phase 03)
+
+Implemented in `nestjs-project/src/videos/`. Uploads never pass the 10GB file through
+the API: the client uploads directly to object storage via **presigned multipart** URLs;
+processing runs asynchronously on a separate worker.
+
+- **Entity/table:** `Video` (`videos`) — belongs to a `Channel` (FK, ON DELETE CASCADE).
+  Fields include `publicId` (unique, `nanoid` — the public URL id), `status`
+  (`draft → uploaded → processing → ready → failed`), `storageKey`, `thumbnailKey`,
+  `uploadId`, `durationSeconds`, `metadata` (jsonb). Migration: `…-CreateVideos.ts`.
+- **Endpoints** (`videos.controller.ts`):
+  - `POST /videos/uploads` (auth, channel owner) → creates the video as `draft`, opens a
+    multipart upload and returns presigned part URLs + `uploadId`.
+  - `POST /videos/:publicId/uploads/complete` (auth, owner) → completes the multipart,
+    sets `uploaded` and enqueues the processing job.
+  - `GET /videos/:publicId` (public) → public metadata (only `ready`).
+  - `GET /videos/:publicId/stream` (public) → HTTP Range → `206 Partial Content` (or `200`),
+    streamed from storage (no full download required).
+  - `GET /videos/:publicId/download` (public) → stream with `Content-Disposition: attachment`.
+- **Queue:** `video-processing` (BullMQ/Redis). Producer `VideoQueueService.enqueueProcessing`
+  (attempts: 3, exponential backoff). Config in `src/config/redis.config.ts`.
+- **Worker:** standalone Nest context in `src/videos/worker/` (container `video-worker`,
+  `Dockerfile.worker` with FFmpeg). `VideoProcessor` (`@Processor`/`WorkerHost`) runs
+  `ffprobe` (duration/metadata) and `ffmpeg` (thumbnail frame), uploads the thumbnail and
+  marks the video `ready` — or `failed` (with `failureReason`) after retries are exhausted.
+- **Storage:** `StorageService` (`@aws-sdk/client-s3`) against MinIO (bucket `videos`,
+  keys `channels/{channelId}/videos/{videoId}/{source|thumbnails}/…`). Config in
+  `src/config/storage.config.ts`.
+- **Infra (compose.yaml):** `redis`, `minio` (+ `createbuckets` one-shot), `video-worker`.
+- Planning/decisions: `docs/decisions/technical-decisions-phase-03-videos.md` and
+  `docs/phases/phase-03-videos/`.
 
 ## Docker Networking
 
