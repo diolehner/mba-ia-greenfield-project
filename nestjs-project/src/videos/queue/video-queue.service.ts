@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
-import { Queue } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import { VIDEO_JOB_OPTIONS, VIDEO_QUEUE } from '../videos.constants';
 
 export interface ProcessVideoJobData {
@@ -14,8 +14,11 @@ export class VideoQueueService {
     private readonly queue: Queue<ProcessVideoJobData>,
   ) {}
 
-  async enqueueProcessing(videoId: string): Promise<void> {
-    await this.queue.add(
+  // Returns the enqueued Job so callers/tests can assert on it without querying
+  // queue state — a running worker consumes the job immediately, so inspecting
+  // `getWaiting()` after add() would be racy.
+  async enqueueProcessing(videoId: string): Promise<Job<ProcessVideoJobData>> {
+    return this.queue.add(
       VIDEO_QUEUE.JOB_PROCESS,
       { videoId },
       {

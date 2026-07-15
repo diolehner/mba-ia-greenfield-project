@@ -40,17 +40,16 @@ describe('VideoQueueService (integration, real Redis)', () => {
     await queue.close();
   });
 
-  it('should enqueue a real job that lands in the queue', async () => {
-    await service.enqueueProcessing('video-integration-1');
+  it('should enqueue a real job with the correct name, data and options', async () => {
+    // Assert on the returned Job, not queue state: a running worker (the
+    // video-worker container) consumes the job immediately, so getWaiting()
+    // would be racy against a live consumer.
+    const job = await service.enqueueProcessing('video-integration-1');
 
-    const waiting = await queue.getWaiting();
-    expect(waiting).toHaveLength(1);
-    expect(waiting[0].name).toBe(VIDEO_QUEUE.JOB_PROCESS);
-    expect(waiting[0].data).toEqual({ videoId: 'video-integration-1' });
-    expect(waiting[0].opts.attempts).toBe(3);
-    expect(waiting[0].opts.backoff).toEqual({
-      type: 'exponential',
-      delay: 2000,
-    });
+    expect(job.id).toBeDefined();
+    expect(job.name).toBe(VIDEO_QUEUE.JOB_PROCESS);
+    expect(job.data).toEqual({ videoId: 'video-integration-1' });
+    expect(job.opts.attempts).toBe(3);
+    expect(job.opts.backoff).toEqual({ type: 'exponential', delay: 2000 });
   });
 });

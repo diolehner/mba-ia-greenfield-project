@@ -8,6 +8,5 @@ WORKDIR /home/node/app
 
 USER node
 
-# Real command is set in SI-03.6 (runs the standalone worker: src/videos/worker/main.ts).
-# Idle until then so the container builds and stays up without crash-looping.
-CMD [ "tail", "-f", "/dev/null" ]
+# Runs the standalone BullMQ worker (no HTTP server) in dev via ts-node.
+CMD [ "npx", "ts-node", "-r", "tsconfig-paths/register", "src/videos/worker/main.ts" ]
