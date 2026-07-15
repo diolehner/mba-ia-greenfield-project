@@ -34,6 +34,9 @@ docker compose exec nestjs-api npm run start:dev
 Services:
 - `nestjs-api` — NestJS API, port `3000`
 - `db` — PostgreSQL 17, port `5432`, database `streamtube`, user/password `streamtube`
+- `redis` — Redis 7 (BullMQ queue backend); reached at `redis:6379` on the Compose network (not published to the host)
+- `minio` — S3-compatible object storage; API `9000`, console `9001`; bucket `videos` created by the one-shot `createbuckets` service
+- `video-worker` — standalone BullMQ worker (`Dockerfile.worker`, FFmpeg) consuming the `video-processing` queue; no HTTP server
 
 All verification and teardown commands run on the **host machine**:
 
