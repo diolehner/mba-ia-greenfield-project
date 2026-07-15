@@ -44,9 +44,9 @@ O projeto é um monorepo baseado em containers Docker. Cada subprojeto sobe sua 
 - **API** (NestJS 11) — regras de negócio, autenticação (JWT + refresh token rotation), envio de e-mails e acesso ao banco.
 - **Database** (PostgreSQL 17) — usuários, canais e tokens de autenticação.
 - **Email Service** (Mailpit) — captura os e-mails transacionais (confirmação de conta e recuperação de senha) em uma UI local.
-- **Video Worker** (FFmpeg) — processamento de vídeos *(planejado — Fase 03)*.
-- **Object Storage** (S3/MinIO) — arquivos de vídeo e thumbnails *(planejado — Fase 03)*.
-- **Message Queue** — fila de processamento de vídeos *(planejado — Fase 03)*.
+- **Video Worker** (FFmpeg) — processamento de vídeos: ffprobe (duração/metadados) e thumbnail *(Fase 03)*.
+- **Object Storage** (MinIO / S3) — arquivos de vídeo e thumbnails *(Fase 03)*.
+- **Message Queue** (BullMQ / Redis) — fila de processamento de vídeos *(Fase 03)*.
 
 O diagrama de arquitetura completo (C4) está em `docs/diagrams/software-arch.mermaid`.
 
@@ -124,6 +124,8 @@ Sufixos: `*.test.ts(x)` (unitário), `*.integration.test.ts(x)` (Route Handlers 
 ## ✅ Funcionalidades implementadas
 
 **Fase 01 — Configuração base** e **Fase 02 — Autenticação** estão concluídas (backend + frontend).
+A **Fase 03 — Upload e Processamento de Vídeos** está concluída no backend (módulo de vídeos, upload
+presigned multipart, worker FFmpeg, streaming/download; ver `CLAUDE.md` → *Videos Module*).
 
 ### Autenticação (Fase 02)
 
@@ -194,7 +196,7 @@ green-field-ia-project/
 |------|-----------|--------|
 | **01** | Configuração Base do Projeto | ✅ Concluída |
 | **02** | Cadastro, Login e Gerenciamento de Conta | ✅ Concluída |
-| **03** | Upload e Processamento de Vídeos | ⏳ Planejada |
+| **03** | Upload e Processamento de Vídeos | ✅ Concluída (backend) |
 | **04** | Gerenciamento de Vídeos e Canal | ⏳ Planejada |
 | **05** | Página de Visualização do Vídeo | ⏳ Planejada |
 | **06** | Interações Sociais (Likes, Comentários, Inscrições) | ⏳ Planejada |
