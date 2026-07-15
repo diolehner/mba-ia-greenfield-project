@@ -11,8 +11,8 @@ import {
   VideoNotFoundException,
 } from '../common/exceptions/domain.exception';
 import { VideoQueueService } from './queue/video-queue.service';
-import { StorageService } from './storage/storage.service';
-import { Video, VIDEO_STATUS } from './entities/video.entity';
+import { ObjectRangeResult, StorageService } from './storage/storage.service';
+import { PublicVideo, Video, VIDEO_STATUS } from './entities/video.entity';
 import { VIDEO_UPLOAD } from './videos.constants';
 import { InitiateUploadDto } from './dto/initiate-upload.dto';
 import { CompleteUploadDto } from './dto/complete-upload.dto';
@@ -142,6 +142,69 @@ export class VideosService {
     await this.videoQueueService.enqueueProcessing(video.id);
 
     return { publicId: video.publicId, status: video.status };
+  }
+
+  /**
+   * Public metadata for a video. Only `ready` videos are exposed — anything
+   * else (draft/uploaded/processing/failed) or an unknown publicId surfaces as
+   * a 404 so we never leak the existence of not-yet-published videos.
+   */
+  async getPublicVideo(publicId: string): Promise<PublicVideo> {
+    const video = await this.getReadyVideo(publicId);
+    return video.toPublic();
+  }
+
+  /**
+   * Opens a stream of the source object for a `ready` video, delegating the
+   * `Range` header handling to the storage layer. The domain lookup/validation
+   * runs (and throws) BEFORE any byte is read from storage, so the global
+   * exception filter can still map errors to a clean JSON response.
+   */
+  async openVideoStream(
+    publicId: string,
+    range?: string,
+  ): Promise<ObjectRangeResult> {
+    const video = await this.getReadyVideo(publicId);
+    return this.storageService.getObjectRange(video.storageKey, range);
+  }
+
+  /**
+   * Opens a full-object stream for a `ready` video plus the download file name
+   * derived from the title (or publicId) and the source extension.
+   */
+  async openVideoDownload(
+    publicId: string,
+  ): Promise<{ object: ObjectRangeResult; fileName: string }> {
+    const video = await this.getReadyVideo(publicId);
+    const object = await this.storageService.getObjectRange(video.storageKey);
+    return { object, fileName: this.buildDownloadFileName(video) };
+  }
+
+  private buildDownloadFileName(video: Video): string {
+    const ext = this.extractExtension(video.storageKey);
+    const base = this.slugifyFileName(video.title) || video.publicId;
+    return ext ? `${base}.${ext}` : base;
+  }
+
+  private extractExtension(storageKey: string): string {
+    const match = /\.([a-z0-9]+)$/i.exec(storageKey);
+    return match ? match[1] : '';
+  }
+
+  private slugifyFileName(value: string): string {
+    return value
+      .trim()
+      .replace(/[^a-zA-Z0-9-_ ]/g, '')
+      .replace(/\s+/g, '-')
+      .slice(0, 100);
+  }
+
+  private async getReadyVideo(publicId: string): Promise<Video> {
+    const video = await this.videoRepository.findOne({ where: { publicId } });
+    if (!video || video.status !== VIDEO_STATUS.READY) {
+      throw new VideoNotFoundException();
+    }
+    return video;
   }
 
   private async getOwnedChannel(userId: string): Promise<Channel> {
