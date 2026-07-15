@@ -8,9 +8,9 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluído (testes verdes)
 | SI | Descrição | Status | Testes |
 |----|-----------|--------|--------|
 | SI-03.0 | Infra & deps (MinIO, Redis, config, install) | ✅ | infra up verificada (redis/minio healthy, worker up, bucket `videos` criado); tsc 0 |
-| SI-03.1 | Entidade `Video` + migration `CreateVideos` | ⬜ | — |
-| SI-03.2 | Storage service (S3/MinIO) | ⬜ | — |
-| SI-03.3 | Fila BullMQ + producer | ⬜ | — |
+| SI-03.1 | Entidade `Video` + migration `CreateVideos` | ✅ | entity integration 6 verdes; migration aplica |
+| SI-03.2 | Storage service (S3/MinIO) | ✅ | integração 5 verdes contra MinIO real |
+| SI-03.3 | Fila BullMQ + producer | ✅ | unit + integração (Redis real) verdes |
 | SI-03.4 | Upload: iniciar (draft + multipart + presigned) | ⬜ | — |
 | SI-03.5 | Upload: concluir (complete + enqueue) | ⬜ | — |
 | SI-03.6 | Worker: ffprobe + thumbnail + container | ⬜ | — |
